@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dao.mapper.PhoneMapper">
+
+	<!-- 根据用户编码usCode查询用户信息 -->
+	<select id="queryUserInf" parameterType="HashMap" resultType="HashMap">
+		select pu.us_code usCode, -- 用户编码
+			   pu.us_name usName, -- 用户姓名
+			   pu.gender,-- 用户性别
+			   pu.us_lnnm usLnnm,-- 账号
+			   pu.us_lnnm usLnnm,-- 账号
+			   pp.pst_name pstName, -- 职位名
+			   po.org_name orgName,  -- 所属单位
+			   pu.us_tel usTel,-- 手机号码
+			   pu.us_email usEmail-- 邮箱
+			   from psdb.ps_user pu, -- 用户信息表
+					  psdb.ps_position pp,  -- 职位表
+					  psdb.ps_org po -- 所属单位
+		where pu.us_code = #{usCode,jdbcType=VARCHAR} -- 查询条件用户编码
+		and pu.org_code = po.org_code(+)
+		and pu.pst_code = pp.pst_code(+)
+	</select>
+
+	<!-- 根据用户编码usCode 修改：性别，手机号，邮箱，密码-->
+	<update id="updateUserInf" parameterType="HashMap" >
+		update psdb.ps_user -- 用户信息表
+			<set>
+				<if test="gender != null and gender != ''" >
+					gender = #{gender,jdbcType=VARCHAR},
+				</if>
+				<if test="usTel != null and usTel != ''" >
+					us_tel = #{usTel,jdbcType=VARCHAR},
+				</if>
+				<if test="usEmail != null and usEmail != ''" >
+					us_email = #{usEmail,jdbcType=VARCHAR},
+				</if>
+				<if test="usLnpw != null and usLnpw != ''" >
+					us_lnpw = #{usLnpw,jdbcType=VARCHAR},
+				</if>
+			</set>
+		where us_code = #{usCode,jdbcType=VARCHAR}
+	</update>
+
+	<!-- 根据系统编码sysCode查询快捷功能信息 暂时sys_code=12 func_type可选择传参-->
+	<select id="queryUserFunc" parameterType="HashMap" resultType="HashMap">
+		select
+			--puf.uf_code ufCode, -- 快捷功能主键编码id
+			puf.us_code usCode, -- 用户编码
+			puf.func_code funcCode, -- 功能编码
+			--puf.uf_order ufOrder, -- 排序编码
+			--puf.uf_type ufType, -- 分类1快捷功能，2应用功能
+			pf.func_name funcName, -- 功能名称
+			pf.func_type funcType, -- 功能类型
+			pf.func_p_code funcPCode, -- 父功能编码
+			pf.func_m_path funcMPath, -- 模块路径
+			pf.func_a_path funcAPath, -- 访问路径
+			pf.func_icon funcIcom, -- 图标
+			pf.func_order funcOrder, -- 排序
+			pf.func_status funcStatus, -- 图片状态
+			pf.SEARCH_COUNT searchCount, -- 搜索次数
+			'1' isAuth, -- 是否有权限
+            pf.apply_type applyType -- 组件类型
+		from psdb.ps_user_function puf, --用户快捷功能表
+			psdb.ps_function pf -- 所有功能表
+		where
+		puf.func_code = pf.func_code(+)
+		<if test="usCode != null and usCode != ''" >
+			and puf.us_code = #{usCode}
+		</if>
+		<if test="ufType != null and ufType != ''" >
+			and puf.uf_type = #{ufType}
+		</if>
+        and pf.func_status = '0'
+	</select>
+
+	<!-- 根据系统编码sysCode查询角色功能信息 暂时sys_code=12 func_type=1、2可选择传参-->
+	<select id="queryUserRlFunc"  parameterType="HashMap" resultType="HashMap">
+		select
+			pu.us_code usCode, -- 用户编码
+			pf.func_code funcCode, -- 功能编码
+			pf.func_name funcName, -- 功能名称
+			pf.func_type funcType, -- 功能类型
+			pf.func_p_code funcPCode, -- 父功能编码
+			pf.func_m_path funcMPath, -- 模块路径
+			pf.func_a_path funcAPath, -- 访问路径
+			pf.func_icon funcIcom, -- 图标
+			pf.func_order funcOrder, -- 排序
+            pf.func_status funcStatus, -- 图片状态
+			pf.SEARCH_COUNT searchCount, -- 搜索次数
+            '1' isAuth, -- 是否有权限
+            pf.apply_type applyType -- 组件类型
+		from psdb.ps_user pu, --
+			psdb.ps_usrl_ref pur, -- 角色功能关系表
+			psdb.ps_rlfuc_rel prr, -- 角色功能表
+			psdb.ps_function pf, --功能表
+			psdb.ps_sys ps --系统表
+		where
+			pu.us_code = pur.us_code(+)
+            and pur.rl_code = prr.rl_code(+)
+            and prr.func_code = pf.func_code(+)
+            and pf.sys_code = ps.sys_code(+)
+			<if test="sysCode != null and sysCode != ''" >
+				and pf.sys_code = #{sysCode}
+			</if>
+			<if test="sysCode == null or sysCode == ''" >
+				and pf.sys_code = 12
+			</if>
+			<if test="funcType != null and funcType != ''">
+				and pf.func_type = #{funcType}
+			</if>
+			<if test="queryName != null and queryName != ''">
+				and pf.func_Name like '%${queryName}%'
+			</if>
+            and pf.func_status = '0'
+            and pu.us_code = #{usCode}
+		order by pf.search_count desc
+	</select>
+
+	<!-- 查询所有本级功能和父级功能 -->
+	<select id="queryUserRlAllFunc"  parameterType="HashMap" resultType="HashMap">
+		select
+		pu.us_code usCode, -- 用户编码
+		pf.func_code funcCode, -- 功能编码
+		pf.func_name funcName, -- 功能名称
+		pf.apply_type applyType, -- 应用类型
+		pf.func_icon funcIcom, -- 图标
+		pf.func_status funcStatus, -- 图片状态
+		pf.func_p_code funcPCode -- 父功能编码
+		from psdb.ps_user pu, --
+		psdb.ps_usrl_ref pur, -- 角色功能关系表
+		psdb.ps_rlfuc_rel prr, -- 角色功能表
+		psdb.ps_function pf, --功能表
+		psdb.ps_sys ps --系统表
+		where
+		pu.us_code = pur.us_code(+)
+        and pur.rl_code = prr.rl_code(+)
+        and prr.func_code = pf.func_code(+)
+        and pf.sys_code = ps.sys_code(+)
+		<if test="sysCode != null and sysCode != ''" >
+			and pf.sys_code = #{sysCode}
+		</if>
+		<if test="sysCode == null or sysCode == ''" >
+			and pf.sys_code = 12
+		</if>
+		<if test="funcType == 1">
+			and pf.func_type in(1,2)
+		</if>
+		<if test="funcType == 2">
+			and pf.func_type in(2,3)
+		</if>
+        and pf.func_status = '0'
+        and pu.us_code = #{usCode}
+	</select>
+
+	<!-- 根据用户编码usCode、功能码funcCode（功能码字符串）、快捷功能类型ufType删除快捷功能			and puf.func_code in(#{funcCode})  -->
+	<delete id="delUserFunc" parameterType="HashMap">
+		delete from psdb.ps_user_function puf
+		where
+			puf.us_code = #{usCode}
+			and puf.uf_type = #{ufType}
+	</delete>
+
+	<!-- 添加当前用户设置的快捷功能-->
+	<insert id="addUserFunc" parameterType="java.util.List">
+		insert all
+		<foreach collection="list"  item="item" index="index" separator=" ">
+		INTO ps_user_function (uf_code,us_code,func_code,uf_order,uf_type)
+		VALUES
+			(
+			#{item.ufCode,jdbcType=VARCHAR},
+			#{item.usCode,jdbcType=DATE},
+			#{item.funcCode,jdbcType=INTEGER},
+			#{item.ufOrder,jdbcType=INTEGER},
+			#{item.ufType,jdbcType=INTEGER}
+			)
+		</foreach>
+		select 1 from dual
+	</insert>
+
+	<!-- 查询设置组件数据-->
+	<select id="queryComponent" parameterType="HashMap" resultType="HashMap">
+		select
+			puc.uc_order ucOrder, -- 功能排序
+			pc.comp_code compCode, -- 组件编码
+			pc.comp_name compName, -- 组件名称
+			pc.comp_path compPath, -- 组件路径
+			pc.url_path urlPath, -- 组件图片地址
+			pc.comp_order compOrder -- 组件排序
+		from psdb.ps_user_component puc,psdb.ps_component pc
+		where puc.comp_code = pc.comp_code(+)
+			and puc.us_code = #{usCode} -- 用户编码
+			and pc.is_use = '1'
+			<if test="sysCode != null and sysCode != ''" >
+				and pc.sys_code = #{sysCode}
+			</if>
+			<if test="sysCode == null or sysCode == ''" >
+				and pc.sys_code = 12
+			</if>
+	</select>
+
+	<!-- 查询用户所有组件 -->
+	<select id="queryRlComponent" parameterType="HashMap" resultType="HashMap">
+		select
+			pc.comp_code compCode, -- 组件编码
+			pc.comp_name compName, -- 组件名称
+			pc.comp_path compPath, -- 组件路径
+			pc.url_path urlPath, -- 组件图片地址
+			pc.comp_order compOrder, -- 组件排序
+			pc.comp_type compType -- 组件分类
+		from psdb.ps_usrl_ref pur,psdb.ps_rlcom_ref prr,psdb.ps_component pc
+		where
+			pur.rl_code = prr.rl_code(+)
+			and prr.comp_code = pc.comp_code(+)
+			and pc.is_use = '1'
+			<if test="sysCode != null and sysCode != ''" >
+				and pc.sys_code = #{sysCode}
+			</if>
+			<if test="sysCode == null or sysCode == ''" >
+				and pc.sys_code = 12
+			</if>
+            and pur.us_code= #{usCode} -- 用户编码
+	</select>
+
+	<!-- 根据用户编码usCode、功能码funcCode（功能码字符串）、快捷功能类型ufType删除快捷功能 and puc.comp_code in(#{compCode})-->
+	<delete id="delUserComp" parameterType="HashMap">
+		delete from psdb.ps_user_component puc
+		where
+			puc.us_code = #{usCode}
+	</delete>
+
+	<!-- 添加当前用户设置的快捷功能-->
+	<insert id="addUserComp" parameterType="java.util.List">
+		insert all
+		<foreach collection="list"  item="item" index="index" separator=" ">
+		INTO ps_user_component (uc_code,us_code,comp_code,uc_order)
+		VALUES
+			(#{item.ucCode,jdbcType=VARCHAR},
+			#{item.usCode,jdbcType=DATE},
+			#{item.compCode,jdbcType=INTEGER},
+			#{item.ucOrder,jdbcType=INTEGER})
+		</foreach>
+		select 1 from dual
+	</insert>
+
+	<!-- 根据功能编码funcCode 修改：查询次数search_count，每次查询次数加1-->
+	<update id="updateFuncSearchCount" parameterType="HashMap" >
+		update
+			psdb.ps_function -- 功能信息表
+		set
+			search_count = NVL(search_count,0)+1
+		where func_code = #{funcCode}
+	</update>
+
+	<select id="queryHotFuncByQueryName"  parameterType="HashMap" resultType="HashMap">
+		with aaa as (
+		select
+		pf.func_code funcCode, -- 功能编码
+		pf.func_name funcName, -- 功能名称
+		pf.func_type funcType, -- 功能类型
+		pf.func_p_code funcPCode, -- 父功能编码
+		pf.func_m_path funcMPath, -- 模块路径
+		pf.func_a_path funcAPath, -- 访问路径
+		pf.func_icon funcIcom, -- 图标
+		pf.func_order funcOrder, -- 排序
+		pf.SEARCH_COUNT searchCount, -- 搜索次数
+		pf.apply_type applyType -- 组件类型
+		from psdb.ps_user pu, --
+		psdb.ps_usrl_ref pur, -- 角色功能关系表
+		psdb.ps_rlfuc_rel prr, -- 角色功能表
+		psdb.ps_function pf, --功能表
+		psdb.ps_sys ps --系统表
+		where
+		pu.us_code = pur.us_code(+)
+		and pur.rl_code = prr.rl_code(+)
+		and prr.func_code = pf.func_code(+)
+		and pf.sys_code = ps.sys_code(+)
+		and pf.func_status = '0'
+		and pf.sys_code = 12
+		and pf.func_Name like '%${queryName}%'
+		and pu.us_code = #{usCode}
+		order by pf.search_count desc
+		)
+		SELECT
+		max(func_Code) funcCode, -- 功能编码
+		max(func_Name) funcName, -- 功能名称
+		max(func_Type) funcType, -- 功能类型
+		max(func_P_Code) funcPCode, -- 父功能编码
+		max(func_m_path) funcMPath, -- 模块路径
+		max(func_A_Path) funcAPath, -- 访问路径
+		max(func_Icon) funcIcom, -- 图标
+		max(func_Order) funcOrder, -- 排序
+		max(apply_Type) applyType -- 组件类型
+		FROM psdb.ps_function
+		START WITH func_Code in (select funcCode from aaa)
+		CONNECT BY PRIOR func_P_Code = func_Code
+		group by func_Code
+	</select>
+
+    <!-- 查询所有本级功能和父级功能 pu.us_code usCode,  用户编码 -->
+    <select id="queryAllFuncByType"  parameterType="HashMap" resultType="HashMap">
+        select
+           -- pu.us_code usCode, -- 用户编码
+			pf.func_code funcCode, -- 功能编码
+			pf.func_name funcName, -- 功能名称
+			pf.func_type funcType, -- 功能类型
+			pf.func_p_code funcPCode, -- 父功能编码
+			pf.func_m_path funcMPath, -- 模块路径
+			pf.func_a_path funcAPath, -- 访问路径
+			pf.func_icon funcIcom, -- 图标
+			pf.func_order funcOrder, -- 排序
+            pf.func_status funcStatus, -- 图片状态
+            pf.SEARCH_COUNT searchCount, -- 搜索次数
+            '0' isAuth, -- 是否有权限
+            pf.apply_type applyType -- 组件类型
+        from
+        psdb.ps_function pf --功能表
+        where
+        pf.sys_code = #{sysCode}
+        and pf.func_type = #{funcType}
+        and pf.func_status = '0'
+    </select>
+
+</mapper>

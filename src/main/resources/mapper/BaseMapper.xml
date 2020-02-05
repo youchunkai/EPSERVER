@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dao.mapper.BaseMapper">
+	<select id="searchUserByUsSubcode" parameterType="HashMap" resultType="HashMap">
+		select US_CODE,US_NAME,ORG_CODE,UT_CODE,RE_CODE,US_LNNM,DISTRICT_CODE,US_SUBCODE,PROVINCE,CITY,IS_STUDENT_CERTIFIED,
+		GENDER,IS_CERTIFIED,US_AGE,US_EDUCATION,US_NATION,US_IDNUMBER,US_EMAIL,US_POLITY,US_HEALTHSTATUS,US_BIRTHDAY,US_ADRESS,US_CTM 
+		from PS_USER where US_SUBCODE = #{usSubCode,jdbcType=VARCHAR} and USER_STATUS = '1'
+	</select>
+	
+	<select id="searchUser" parameterType="HashMap" resultType="HashMap">
+		select US_CODE,US_NAME,ORG_CODE,UT_CODE,RE_CODE,US_LNNM,DISTRICT_CODE,US_SUBCODE,PROVINCE,CITY,IS_STUDENT_CERTIFIED,
+		GENDER,IS_CERTIFIED,US_AGE,US_EDUCATION,US_NATION,US_IDNUMBER,US_EMAIL,US_POLITY,US_HEALTHSTATUS,US_BIRTHDAY,US_ADRESS,US_CTM 
+		from PS_USER where US_LNNM = #{usname,jdbcType=VARCHAR} and US_LNPW=#{password,jdbcType=VARCHAR} and USER_STATUS = '1'
+	</select>
+	
+	<select id="getUtCode" parameterType="HashMap" resultType="HashMap">
+		select UT_CODE from PS_USERTYPE where UT_NAME = #{utCode,jdbcType=VARCHAR}
+	</select>
+	
+	<insert id="addUser" parameterType="HashMap">
+		insert into PS_USER (US_CODE,UT_CODE,US_SUBCODE) values (seq_user_id.nextval,#{UT_CODE,jdbcType=NUMERIC},#{usSubCode,jdbcType=NUMERIC})
+	</insert>
+	
+	<insert id="addLog" parameterType="HashMap">
+		insert into PSDB.PS_SYS_LOG (LG_CODE,LG_SESSION,SYS_CODE,FUNC_CODE,US_CODE,OPE_CODE,LG_TM,LG_LTM,LG_RTM,LG_ERR,LG_CLIENTTYPE,LG_CLIENTIP,DSLG_CLIENTNAME,LG_CLIENTPORT,
+		LG_ISSUCESS,LG_SQLCLOB,LG_SQLPARAM,LG_TYPE,LG_DESC,LG_REMARKS,LG_URL,LG_SVRCODE,LG_SYSVERSION,LG_CLIENTINFO) 
+		values (
+			#{LG_CODE,jdbcType=VARCHAR},
+			#{LG_SESSION,jdbcType=VARCHAR},
+			#{SYS_CODE,jdbcType=VARCHAR},
+			#{FUNC_CODE,jdbcType=VARCHAR},
+			#{US_CODE,jdbcType=VARCHAR},
+			#{OPE_CODE,jdbcType=VARCHAR},
+			sysdate,
+			to_date(#{LG_LTM,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss'),
+			to_date(#{LG_RTM,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss'),
+			#{LG_ERR,jdbcType=VARCHAR},
+			#{LG_CLIENTTYPE,jdbcType=VARCHAR},
+			#{LG_CLIENTIP,jdbcType=NUMERIC},
+			#{DSLG_CLIENTNAME,jdbcType=VARCHAR},
+			#{LG_CLIENTPORT,jdbcType=VARCHAR},
+			#{LG_ISSUCESS,jdbcType=VARCHAR},
+			#{LG_SQLCLOB,jdbcType=CLOB},
+			#{LG_SQLPARAM,jdbcType=CLOB},
+			#{LG_TYPE,jdbcType=VARCHAR},
+			#{LG_DESC,jdbcType=VARCHAR},
+			#{LG_REMARKS,jdbcType=VARCHAR},
+			#{LG_URL,jdbcType=VARCHAR},
+			#{LG_SVRCODE,jdbcType=VARCHAR},
+			#{LG_SYSVERSION,jdbcType=VARCHAR},
+			#{LG_CLIENTINFO,jdbcType=CLOB}
+		)
+	</insert>
+	
+	<insert id="addLogBatch" parameterType="java.util.ArrayList">
+		insert all 
+		<foreach collection="list" item="item" index="index" separator=" " >
+			into PSDB.PS_SYS_LOG (LG_CODE,LG_SESSION,SYS_CODE,FUNC_CODE,US_CODE,OPE_CODE,LG_TM,LG_LTM,LG_RTM,LG_ERR,LG_CLIENTTYPE,LG_CLIENTIP,DSLG_CLIENTNAME,LG_CLIENTPORT,LG_ISSUCESS,LG_SQLCLOB,LG_SQLPARAM,LG_TYPE,LG_DESC,LG_REMARKS,LG_URL,LG_SVRCODE,LG_SYSVERSION,LG_CLIENTINFO) 
+			values (
+				#{item.LG_CODE,jdbcType=VARCHAR},
+				#{item.LG_SESSION,jdbcType=VARCHAR},
+				#{item.SYS_CODE,jdbcType=VARCHAR},
+				#{item.FUNC_CODE,jdbcType=VARCHAR},
+				#{item.US_CODE,jdbcType=VARCHAR},
+				#{item.OPE_CODE,jdbcType=VARCHAR},
+				sysdate,
+				to_date(#{item.LG_LTM,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss'),
+				to_date(#{item.LG_RTM,jdbcType=VARCHAR},'yyyy-MM-dd hh24:mi:ss'),
+				#{item.LG_ERR,jdbcType=VARCHAR},
+				#{item.LG_CLIENTTYPE,jdbcType=VARCHAR},
+				#{item.LG_CLIENTIP,jdbcType=NUMERIC},
+				#{item.DSLG_CLIENTNAME,jdbcType=VARCHAR},
+				#{item.LG_CLIENTPORT,jdbcType=VARCHAR},
+				#{item.LG_ISSUCESS,jdbcType=VARCHAR},
+				#{item.LG_SQLCLOB,jdbcType=CLOB},
+				#{item.LG_SQLPARAM,jdbcType=CLOB},
+				#{item.LG_TYPE,jdbcType=VARCHAR},
+				#{item.LG_DESC,jdbcType=VARCHAR},
+				#{item.LG_REMARKS,jdbcType=VARCHAR},
+				#{item.LG_URL,jdbcType=VARCHAR},
+				#{item.LG_SVRCODE,jdbcType=VARCHAR},
+				#{item.LG_SYSVERSION,jdbcType=VARCHAR},
+				#{item.LG_CLIENTINFO,jdbcType=CLOB}
+			)
+		</foreach>
+		select 1 from dual
+	</insert>
+</mapper>

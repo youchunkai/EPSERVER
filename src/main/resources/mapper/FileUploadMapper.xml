@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dao.mapper.FileUploadMapper">
+	
+	<select id="test" resultType="HashMap">
+		select RT_CODE from PS_RESOURCE_TYPE
+	</select>
+	
+	<select id="getResourceType" parameterType="HashMap" resultType="HashMap">
+		select RT_CODE from PS_RESOURCE_TYPE where RT_NAME=#{RT_NAME}
+	</select>
+	
+	<select id="getAllResourceType" resultType="HashMap">
+		select * from PS_RESOURCE_TYPE
+	</select>
+	
+	<insert id="addResource" parameterType="HashMap">
+		insert into PS_RESOURCE (RE_CODE,RT_CODE,RE_ADDRESS,RE_URL,RE_DATE,RE_SUBFIX,RE_SIZE,RE_NAME,RT_SUBPIC,RE_SUBPIC_URL) 
+		VALUES (#{RE_CODE},#{RT_CODE},#{RE_ADDRESS},#{RE_URL},to_date(#{RE_DATE},'yyyy-MM-dd hh24:mi:ss'),#{RE_SUBFIX},#{RE_SIZE}，#{RE_NAME},#{RT_SUBPIC},#{RE_SUBPIC_URL})
+	</insert>
+	
+	<insert id="deleteResource" parameterType="HashMap">
+		delete from PS_RESOURCE where re_code = #{RE_CODE}
+	</insert>
+	
+	<insert id="addEvent" parameterType="HashMap">
+		insert into PS_EVENT (
+		E_code,
+		US_CODE,
+		ET_CODE,
+		EIL_CODE,
+		E_TIME,
+		E_ADDRESS,
+		E_LON,
+		E_LAT,
+		E_DEC) 
+		VALUES (
+		#{E_CODE},
+		#{US_CODE},
+		#{ET_CODE},
+		#{EIL_CODE},
+		to_date(#{E_TIME},'yyyy-MM-dd hh24:mi:ss'),
+		#{E_ADDRESS},
+		#{E_LON},
+		#{E_LAT},
+		#{E_DEC})
+	</insert>
+	
+	<insert id="addEventResource" parameterType="HashMap">
+		insert into PS_EVENT_RESOURCE (E_CODE,RE_CODE) 
+		VALUES (#{E_CODE},#{RE_CODE})
+	</insert>
+	
+	<select id="searchEventId" resultType="HashMap">
+		select seq_event_id.nextval from dual
+	</select>
+
+	<insert id="addResourceGroup" parameterType="HashMap">
+		insert into PS_RES_GROUP (RESG_CODE,RESG_NAME,RESG_REMARKS) 
+		VALUES (
+			#{RESG_CODE},
+			#{RESG_NAME},
+			#{RESG_REMARKS}
+		)
+	</insert>
+	
+	<delete id="deleteResourceGroup" parameterType="HashMap">
+		delete from PS_RES_GROUP where RESG_CODE = #{RESG_CODE}
+	</delete>
+	
+	<insert id="addResourceGroupItem" parameterType="java.util.ArrayList">
+		insert all 
+		<foreach collection="list" item="item" index="index" separator=" ">
+	        into PS_RESG_REF(RE_CODE,RESG_CODE) 
+	        values(#{item.RE_CODE,jdbcType=VARCHAR},
+		        #{item.RESG_CODE,jdbcType=VARCHAR}
+		    )
+    	</foreach>
+    	select 1 from dual
+	</insert>
+</mapper>

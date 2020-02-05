@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dao.mapper.ThirdMapper">
+	<select id="getUserInfoByDistrict" parameterType="string" resultType="HashMap">
+		with org as(
+		  select grd1.org_code,grd1.grd_name org_name,
+		         (case when grd1.grdl_code = '2' then null else grd1.grd_name end) third_name,
+		         (case when grd2.grdl_code = '2' then grd2.grd_name else grd1.grd_name end) second_name 
+		  from xadb.grd_inf grd1,xadb.grd_inf grd2 where grd1.grd_pcode = grd2.grd_code(+)
+		  start with grd1.grd_code in (select grd_code from xadb.grd_inf where district_code = #{district} and grd_type = '1' ) 
+		  connect by prior grd1.grd_code = grd1.grd_pcode
+		)      
+		select us_code,us_name,us_lnnm,us_lnpw,us_tel,us.pst_code,zw.pst_name,user_status,to_char(update_tm,'yyyy-mm-dd hh24:mi:ss') update_tm,
+		       us.org_code,org_name,third_name,second_name,us_idnumber,gender,us_education,to_char(work_tm,'yyyy-mm-dd hh24:mi:ss') work_tm
+        from psdb.ps_user us,psdb.ps_position zw,org
+        where us.org_code = org.org_code
+        and user_status = '1' 
+        and us.pst_code = zw.pst_code(+)
+	</select>
+	
+	<select id="getUserInfoByDistrictAndUsName" parameterType="string" resultType="HashMap">
+		select US_CODE,US_NAME,ORG_CODE,UT_CODE,RE_CODE,US_LNNM,DISTRICT_CODE,US_SUBCODE,PROVINCE,CITY,IS_STUDENT_CERTIFIED,
+		GENDER,IS_CERTIFIED,US_AGE,US_EDUCATION,US_NATION,US_IDNUMBER,US_EMAIL,US_POLITY,US_HEALTHSTATUS,US_BIRTHDAY,US_ADRESS,US_CTM 
+        from psdb.ps_user us,psdb.ps_position zw 
+        where org_code in (select org_code from xadb.grd_inf start with grd_code in (select grd_code from xadb.grd_inf where district_code = #{district} and grd_type = '1' ) connect by prior grd_code = grd_pcode)
+        and user_status = '1' 
+        and us.pst_code = zw.pst_code(+)
+        and us.us_lnnm = #{lnnm}
+        and us.us_lnpw = #{pw}
+	</select>
+	
+	<select id="getGridInfo" parameterType="string" resultType="HashMap">
+		select org_code,org_name from psdb.ps_org start with org_code =(select org_code from xadb.grd_inf where district_code = #{district} and grd_type = '1') connect by prior org_code = grd_pcode
+	</select>
+	
+	<select id="getUpdateUserInfo" parameterType="HashMap" resultType="HashMap">
+        with org as(
+		  select grd1.org_code,grd1.grd_name org_name,
+		         (case when grd1.grdl_code = '2' then null else grd1.grd_name end) third_name,
+		         (case when grd2.grdl_code = '2' then grd2.grd_name else grd1.grd_name end) second_name 
+		  from xadb.grd_inf grd1,xadb.grd_inf grd2 where grd1.grd_pcode = grd2.grd_code(+)
+		  start with grd1.grd_code in (select grd_code from xadb.grd_inf where district_code = #{district} and grd_type = '1' ) 
+		  connect by prior grd1.grd_code = grd1.grd_pcode
+		)      
+		select us_code,us_name,us_lnnm,us_lnpw,us_tel,us.pst_code,zw.pst_name,user_status,to_char(update_tm,'yyyy-mm-dd hh24:mi:ss') update_tm,
+		       us.org_code,org_name,third_name,second_name,us_idnumber,gender,us_education,to_char(work_tm,'yyyy-mm-dd hh24:mi:ss') work_tm
+        from psdb.ps_user us,psdb.ps_position zw,org
+        where us.org_code = org.org_code
+        and update_tm > to_date(#{staTime},'yyyy-mm-dd hh24:mi:ss') 
+        and update_tm &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        and us.pst_code = zw.pst_code(+)
+	</select>
+	
+	<select id="queryUpdateUserInfo" parameterType="HashMap" resultType="HashMap">
+        with org as(
+	      select grd1.org_code,grd1.grd_name org_name
+	      from xadb.grd_inf grd1
+	      start with grd1.grd_code in (select grd_code from xadb.grd_inf where district_code = #{district} and grd_type = '1' ) 
+	      connect by prior grd1.grd_code = grd1.grd_pcode
+	    )      
+	    select us_code,us_name,us_lnnm,org_name,ut.ut_remarks,zw.pst_name,user_status,us_tel
+	        from psdb.ps_user us,psdb.ps_position zw,org,psdb.ps_usertype ut
+	        where us.org_code = org.org_code
+	        and update_tm > to_date(#{staTime},'yyyy-mm-dd hh24:mi:ss') 
+	        and update_tm &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+	        and us.pst_code = zw.pst_code(+)
+	        and us.ut_code = ut.ut_code(+)
+	</select>
+	
+	<select id="getUpdateGridUserInfo" parameterType="HashMap" resultType="HashMap">
+        with org as(
+		  select grd1.org_code,grd1.grd_name org_name,
+		         (case when grd1.grdl_code = '2' then null else grd1.grd_name end) third_name,
+		         (case when grd2.grdl_code = '2' then grd2.grd_name else grd1.grd_name end) second_name 
+		  from xadb.grd_inf grd1,xadb.grd_inf grd2 where grd1.grd_pcode = grd2.grd_code(+)
+		  start with grd1.grd_code in (select grd_code from xadb.grd_inf where district_code = #{district} and grd_type = '1' ) 
+		  connect by prior grd1.grd_code = grd1.grd_pcode
+		)      
+		select us_code,us_name,us_lnnm,us_tel,user_status,
+		       third_name,second_name,us_idnumber,gender,us_education,to_char(work_tm,'yyyy-mm-dd hh24:mi:ss') work_tm
+        from psdb.ps_user us,org
+        where us.org_code = org.org_code
+        and update_tm > to_date(#{staTime},'yyyy-mm-dd hh24:mi:ss') 
+        and update_tm &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+        and us.pst_code = 'Z00001'
+	</select>
+	
+	
+	<select id="getPtsInfo" parameterType="HashMap" resultType="HashMap">
+		<!-- with us as(
+	      select us_code,us_name,us_tel from psdb.ps_user us
+	      where org_code in (select org_code from xadb.grd_inf start with grd_code in (select grd_code from xadb.grd_inf where district_code = #{district} and grd_type = '1' ) 
+	                         connect by prior grd_code = grd_pcode)
+	      and user_status = '1' 
+	    )
+	    
+	    select pts_name,pts_address,pts_lon,pts_lat,us.us_name,us.us_tel,pth.pth_name,grd_name,ptt.ptt_name,
+	           comp.cpn_corporation,comp.cpn_env_person,comp.cpn_size,comp.cpn_bus_range,comp.cpn_corporation_tel,comp.cpn_envp_tel 
+	    from xadb.grd_pollutant_source pts,
+	         xadb.grd_pollutant_type ptt,
+	         xadb.grd_company comp,
+	         us,
+	         xadb.grd_pollutant_htype pth,
+	         xadb.grd_inf grd        
+	    where pts.pts_status &lt;&gt; '0'
+	    and pts.ptt_code = ptt.ptt_code(+)
+	    and pts.us_wcode = us.us_code
+	    and pts.cpn_code = comp.cpn_code(+)
+	    and comp.pth_code = pth.pth_code(+)
+	    and pts.grd_code = grd.grd_code(+) -->
+	    
+	    with grd as(
+		  select grd_code,grd_name from xadb.grd_inf 
+		  start with grd_code in (select grd_code from xadb.grd_inf where district_code = #{district} and grd_type = '1' ) 
+		  connect by prior grd_code = grd_pcode		
+		)
+		      
+		select pts_name,pts_address,pts_lon,pts_lat,us.us_name,us.us_tel,pth.pth_name,grd_name,ptt.ptt_name,
+		       comp.cpn_corporation,comp.cpn_env_person,comp.cpn_size,comp.cpn_bus_range,comp.cpn_corporation_tel,comp.cpn_envp_tel 
+		from xadb.grd_pollutant_source pts,
+		     xadb.grd_pollutant_type ptt,
+		     xadb.grd_company comp,
+		     psdb.ps_user us,
+		     xadb.grd_pollutant_htype pth,
+		     grd        
+		where pts.pts_status &lt;&gt; '0'
+		and pts.ptt_code = ptt.ptt_code(+)
+		and pts.us_wcode = us.us_code(+)
+		and pts.cpn_code = comp.cpn_code(+)
+		and comp.pth_code = pth.pth_code(+)
+		and pts.grd_code = grd.grd_code
+	</select>
+	
+	<select id="getUpdatePtsInfo" parameterType="HashMap" resultType="HashMap">
+		<!-- with us as(
+		  select us_code,us_name,us_tel from psdb.ps_user us
+		  where org_code in (select org_code from xadb.grd_inf start with grd_code in (select grd_code from xadb.grd_inf where district_code = #{district} and grd_type = '1' ) 
+		                     connect by prior grd_code = grd_pcode)
+		  and user_status = '1'
+		)
+		      
+		select pts.pts_code,pts_name,pts_address,pts_lon,pts_lat,us.us_name,us.us_tel,pth.pth_name,grd_name,ptt.ptt_name,
+		       comp.cpn_corporation,comp.cpn_env_person,comp.cpn_size,comp.cpn_bus_range,comp.cpn_corporation_tel,comp.cpn_envp_tel,
+		       (case when pts_status = 0 then 0 else 1 end) pts_status,to_char(pts.pts_utm,'yyyy-mm-dd hh24:mi:ss') pts_utm 
+		from xadb.grd_pollutant_source pts,
+		     xadb.grd_pollutant_type ptt,
+		     xadb.grd_company comp,
+		     us,
+		     xadb.grd_pollutant_htype pth,
+		     xadb.grd_inf grd
+		where pts.ptt_code = ptt.ptt_code(+)
+		and pts.us_wcode = us.us_code
+		and pts.cpn_code = comp.cpn_code(+)
+		and comp.pth_code = pth.pth_code(+)
+		and pts.grd_code = grd.grd_code(+)
+		and pts.pts_utm > to_date(#{staTime},'yyyy-mm-dd hh24:mi:ss')
+		and pts.pts_utm &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss') -->
+		with grd as(
+		  select grd_code,grd_name from xadb.grd_inf 
+		  start with grd_code in (select grd_code from xadb.grd_inf where district_code = #{district} and grd_type = '1' ) 
+		  connect by prior grd_code = grd_pcode
+		
+		)		          
+		    select pts.pts_code,pts_name,pts_address,pts_lon,pts_lat,us.us_name,us.us_tel,pth.pth_name,grd_name,ptt.ptt_name,
+		           comp.cpn_corporation,comp.cpn_env_person,comp.cpn_size,comp.cpn_bus_range,comp.cpn_corporation_tel,comp.cpn_envp_tel,
+		           (case when pts_status = 0 then 0 else 1 end) pts_status,to_char(pts.pts_utm,'yyyy-mm-dd hh24:mi:ss') pts_utm 
+		    from xadb.grd_pollutant_source pts,
+		         xadb.grd_pollutant_type ptt,
+		         xadb.grd_company comp,
+		         psdb.ps_user us,
+		         xadb.grd_pollutant_htype pth,
+		         grd
+		    where pts.ptt_code = ptt.ptt_code(+)
+		    and pts.us_wcode = us.us_code(+)
+		    and pts.cpn_code = comp.cpn_code(+)
+		    and comp.pth_code = pth.pth_code(+)
+		    and pts.grd_code = grd.grd_code
+		    and pts.pts_utm > to_date(#{staTime},'yyyy-mm-dd hh24:mi:ss')
+		    and pts.pts_utm &lt;= to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')
+	</select>
+	
+	<select id="getPtsPatrolNum" parameterType="HashMap" resultType="HashMap">
+with qxxwg as (
+  select grd_code,grd_name,grdl_code,grd_pcode,org_code from xadb.grd_inf where grd_type = '1'
+  start with grd_code in (select grd_code from xadb.grd_inf where district_code = #{district} and grd_type = '1') connect by prior grd_code = grd_pcode
+),
+us as(
+  select us_code,us_name,grd_name from psdb.ps_user usr,qxxwg where  usr.org_code = qxxwg.org_code and usr.user_status &lt;> '0'
+),
+pts as(
+  select pts_code,pts_patrol_type,pts_patrol_num,pts_ptm,us_code from xadb.grd_pollutant_source p , us where us.us_code = p.us_wcode  and p.pts_status &lt;> '0'
+), 
+pts_week as(
+  select t3.*,(case when js_zs>zs then zs else js_zs end) tjzs from (
+  select t2.*,case when jszs&lt;0 then 0 else jszs end js_zs,
+         (trunc(to_date(#{endTime},'yyyy-mm-dd'),'iw')+7-trunc(to_date(#{staTime},'yyyy-mm-dd'),'iw'))/7 zs from ( 
+    select t.*,trunc((trunc(to_date(#{endTime},'yyyy-mm-dd'),'iw')+7-pts_ptm)/7) jszs from pts t
+    where pts_ptm &lt; trunc(to_date(#{endTime},'yyyy-mm-dd'),'iw')+7
+    and pts_patrol_type = '1'
+  )t2)t3
+),
+patrol_week as(
+  select us_code,sum(pts_patrol_num) pts_patrol_num,sum(patrol_valid_num)  patrol_valid_num from (
+    select pts_code,pts_patrol_num,(case when patrol_valid_num > pts_patrol_num then pts_patrol_num else patrol_valid_num end)patrol_valid_num,us_code from (
+      select pts.pts_code,us_code,
+             pts.pts_patrol_num*tjzs pts_patrol_num,
+             sum((case pts_isvalid when '1' then 1 else 0 end)) patrol_valid_num
+      from pts_week pts,(select pts_code,pts_isvalid from xadb.grd_ptrlpol_record jl 
+                                     where jl.pss_tm >= trunc(to_date(#{staTime},'yyyy-mm-dd'),'iw')
+                                     and jl.pss_tm &lt; trunc(to_date(#{endTime},'yyyy-mm-dd'),'iw')+7 ) jl
+      where pts.pts_code = jl.pts_code(+)
+      group by pts.pts_code,pts.pts_patrol_num,tjzs,us_code
+    )
+  ) group by us_code
+),
+pts_month as(
+  select t2.*,case when (jszs&lt;0 or zs&lt;0) then 0 when jszs>zs then zs else jszs end tjzs from (
+    select t.*,
+           months_between(trunc(to_date(#{endTime},'yyyy-mm-dd'),'MM'),trunc(pts_ptm,'MM')) jszs,
+           months_between(trunc(to_date(#{endTime},'yyyy-mm-dd'),'MM'),trunc(to_date(#{staTime},'yyyy-mm-dd'),'MM'))+1 zs
+    from pts t
+    where pts_ptm &lt; add_months(trunc(to_date(#{endTime},'yyyy-mm-dd'),'MM'),1)
+    and pts_patrol_type = '2'
+  )t2
+),
+patrol_month as(
+  select us_code,sum(pts_patrol_num) pts_patrol_num,sum(patrol_valid_num)  patrol_valid_num from (
+    select pts_code,pts_patrol_num,(case when patrol_valid_num > pts_patrol_num then pts_patrol_num else patrol_valid_num end)patrol_valid_num,us_code from (
+      select pts.pts_code,pts_ptm,us_code,
+             pts.pts_patrol_num*tjzs pts_patrol_num,
+             sum((case pts_isvalid when '1' then 1 else 0 end)) patrol_valid_num
+      from pts_month pts,(select pts_code,pts_isvalid from xadb.grd_ptrlpol_record jl 
+                                     where jl.pss_tm >= trunc(to_date(#{staTime},'yyyy-mm-dd'),'MM')
+                                     and jl.pss_tm &lt; add_months(trunc(to_date(#{endTime},'yyyy-mm-dd'),'MM'),1) ) jl 
+      where pts.pts_code = jl.pts_code(+) 
+      group by pts.pts_code,pts_ptm,pts.pts_patrol_num,tjzs,us_code
+    )
+  ) group by us_code
+),
+patrol as(
+  select * from patrol_week
+  union
+  select * from patrol_month
+)
+select us.*,nvl(pts_patrol_num,0) pts_patrol_num,nvl(patrol_valid_num,0) patrol_valid_num from (
+select us_code,sum(pts_patrol_num) pts_patrol_num,sum(patrol_valid_num)  patrol_valid_num from patrol group by us_code
+) t,us where t.us_code(+) = us.us_code		
+	</select>
+	
+	<select id="getCaseNum" parameterType="HashMap" resultType="HashMap" >
+	  	with qxxwg as (
+		  select grd_code,grdl_code,grd_pcode,org_code from xadb.grd_inf where grd_type = '1'
+		  start with grd_code in (select grd_code from xadb.grd_inf where district_code = #{district} and grd_type = '1') connect by prior grd_code = grd_pcode
+		),
+		us as(
+		  select us_code,us_name from psdb.ps_user usr where exists (select 1 from qxxwg where usr.org_code = qxxwg.org_code) and usr.user_status = '1' and usr.pst_code = 'Z00001'
+		),
+		sj as(
+		  select us_code,count(1) cas_num from xadb.grd_case cas
+		  where exists (select 1 from us where us.us_Code = cas.us_code )
+		  and cas.cas_stm >= to_date(#{staTime},'yyyy-MM-dd')
+		  and cas.cas_stm &lt; to_date(#{endTime},'yyyy-MM-dd')
+		  and cas.cas_isvalid = #{isValid}
+		  group by us_code
+		  
+		)
+		
+		select us.*,nvl(cas_num,0)cas_num from us,sj where sj.us_code(+) = us.us_code
+	</select>
+	
+	<select id="getCaseInfo" parameterType="HashMap" resultType="HashMap">
+with aaa as ( <!-- 当前用户权限下的所有网格/机构 -->
+ select distinct grd.grd_code
+    from xadb.grd_inf grd
+   start with grd.grd_code = (select grd_code from xadb.grd_inf where district_code = #{district} and grd_type = '1' )
+  connect by  prior grd_code = grd_pcode
+),
+bbb as ( <!--查找对应网格下的所有人 -->
+  select us_code from psdb.ps_user usr,xadb.grd_inf grd where usr.org_code = grd.org_code and exists (select 1 from aaa where aaa.grd_code = grd.grd_code)
+),
+cas_user as(<!--权限下网格员上报的案件 -->
+  select cas_code from xadb.grd_case cas
+  where exists (select 1 from bbb where bbb.us_code = cas.us_code)
+  and cas.cas_stm >= to_date(#{staTime},'yyyy-mm-dd hh24:mi:ss')
+  and cas.cas_stm &lt; to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')+1
+),
+cas_grd as(<!--自己平台处理的案件 -->
+  select cas.cas_code from xadb.grd_cas_histatus his,xadb.grd_case cas
+  where exists (select 1 from aaa where aaa.grd_code = his.grd_code)
+  and his.cas_code = cas.cas_code
+  and cas.cas_stm >= to_date(#{staTime},'yyyy-mm-dd hh24:mi:ss')
+  and cas.cas_stm &lt; to_date(#{endTime},'yyyy-mm-dd hh24:mi:ss')+1
+),
+all_cas as(
+  select * from xadb.grd_case g where exists (select 1 from (select distinct cas_code from (select cas_code from cas_user union select cas_code from cas_grd)) t where t.cas_code = g.cas_code )
+  
+),
+res1 as(<!--处理前图片 -->
+  select cas_code,listagg(zy.re_url,',') within group (order by 1) pre_res 
+  from psdb.ps_resg_ref gx,psdb.ps_resource zy ,all_cas c where c.resg_code = gx.resg_code and gx.re_code = zy.re_code  group by cas_code
+),
+res2 as(<!--处理后图片 -->
+  select cas_code,listagg(zy.re_url,',') within group (order by 1) aft_res 
+  from psdb.ps_resg_ref gx,psdb.ps_resource zy ,all_cas c where c.resg_changecode = gx.resg_code and gx.re_code = zy.re_code  group by cas_code
+),
+ccc as ( <!--筛选出权限下网格员上报的案件 -->
+  select cas.*,sta.cas_sat_code,(case when sysdate > cass_etm then '1' else '0' end )cas_isovertime from all_cas cas,xadb.grd_cas_status sta 
+  where cas.cas_code = sta.cas_code                    
+),
+new_detail as(<!--最新处理记录 -->
+  select cas.cas_code,max(cass_tmlimit) detail_tm  
+  from ccc cas,xadb.grd_cas_histatus his
+  where cas.cas_code = his.cas_code
+  group by cas.cas_code
+)
+ 
+select  distinct<!--1超时 0未超时  -->
+cas.cas_sub_code,cas.cas_name,pts.pts_name,lev.casl_name,zt.cas_sat_name,castype.cast_name,usr.us_name,to_char(cas.cas_stm,'yyyy-mm-dd hh24:mi:ss') cas_stm,cas_npass_no,
+cas.cas_isovertime,to_char(cas.cas_tmlimit,'yyyy-mm-dd hh24:mi:ss') cas_tmlimit,to_char(nvl(detail_tm,cas.cas_stm),'yyyy-mm-dd hh24:mi:ss') detail_tm,
+cas.cas_address,cas.cas_lon,cas.cas_lat,ptt.ptt_name,pth.pth_name,cas.cas_desc,pre_res,aft_res,cas.pts_code
+from 
+ ccc cas,
+ res1,res2,
+ psdb.ps_user usr, 
+ xadb.grd_pollutant_htype pth,
+ xadb.grd_pollutant_type ptt,
+ xadb.grd_pollutant_source pts,
+ xadb.grd_cass_item zt,
+ xadb.grd_case_level lev,
+ xadb.grd_case_stype castype,
+ new_detail 
+ where cas.cas_code = new_detail.cas_code(+) 
+ and cas.us_code = usr.us_code(+) 
+ and cas.pth_code = pth.pth_code(+)
+ and cas.ptt_code = ptt.ptt_code(+)
+ and cas.pts_code = pts.pts_code(+)
+ and cas.cas_sat_code = zt.cas_sat_code(+)
+ and cas.casl_code = lev.casl_code(+)
+ and cas.cast_type = castype.cast_type(+)
+ and cas.cas_code = res1.cas_code(+)
+ and cas.cas_code = res2.cas_code(+)
+	</select>
+	
+</mapper>

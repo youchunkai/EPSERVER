@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dao.mapper.XaMapper">
+	<select id="queryDataSources" parameterType="HashMap" resultType="HashMap">
+		select * from PS_DATASOURCE
+	</select>
+	<select id="queryServiceById" parameterType="HashMap" resultType="HashMap">
+		select d.* from PS_DATASERVICE2 d,PS_DATASOURCE s where d.DTSR_CODE = s.DTSR_CODE(+) and ds_code = #{id} and DS_ISINUS = '1' and DS_AUDSTATE = '1'
+	</select>
+	<select id="queryAllService" parameterType="HashMap" resultType="HashMap">
+		select d.* from PS_DATASERVICE2 d,PS_DATASOURCE s where d.DTSR_CODE = s.DTSR_CODE(+) and DS_ISINUS = '1' and DS_AUDSTATE = '1'
+	</select>
+	
+	<select id="queryAllQxCtrl"  parameterType="HashMap" resultType="HashMap">
+		select * from PS_DATA_AUTHCTRL
+	</select>
+	
+	<select id="getHistoryVisit" resultType="HashMap">
+	     select sum(sys_visit_count) history_num from psdb.ps_sys
+	</select>
+	
+	<select id="queryServerAuthRefs" resultType="HashMap">
+	    select * from psdb.ps_ds_auth_ref
+	</select>
+	
+	<select id="queryAllUserAndService" resultType="HashMap">
+		select * from psdb.V_US_DS_AUTH
+		<!-- with userandrole as(
+		     select ul.us_code,ro.func_code,case when ro.ope_code is null then 'd4107dea-5d6f-3ebf-df6b-8cfe77425965' else ro.ope_code end ope_code 
+		     from psdb.ps_usrl_ref ul,psdb.ps_rlfuc_rel ro where ul.rl_code = ro.rl_code(+) and ro.func_code is not null
+		),
+		aaa as(
+		    select distinct us_code,rs.ds_code
+		    from userandrole r, PSDB.PS_SERVICE_FUNC_OPE rs 
+		    where r.func_code = rs.func_code(+) and r.ope_code = rs.ope_code(+) and ds_code is not null 
+		)
+		select us_code,XMLAGG(XMLELEMENT(E, ds_code || ',')).EXTRACT('//text()').getclobval() ds_code from aaa group by us_code -->
+	</select>
+</mapper>
